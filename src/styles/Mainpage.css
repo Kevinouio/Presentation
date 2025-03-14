@@ -1,7 +1,11 @@
+/* Reset default margins */
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
 .mainpage {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
+    /* Removed auto margins here so the sections truly span the full width */
     font-family: Arial, sans-serif;
     color: #333;
 }
@@ -33,14 +37,18 @@
     background-color: #1c86ee;
 }
 
+/* Full-width content sections */
 .content-section {
+    width: 100%;
     background-color: #000;
     color: #fff;
     padding: 20px;
     margin-bottom: 20px;
     border-radius: 8px;
+    display: flex;
 }
 
+/* Fade-in animation */
 .fade-in {
     opacity: 0;
     transform: translateY(50px);

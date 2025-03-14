@@ -1,8 +1,11 @@
 .board {
     display: grid;
-    grid-template-columns: repeat(7, 60px);
+    grid-template-columns: repeat(7, 100px);
     gap: 5px;
     background-color: #3b82f6;
     padding: 10px;
     border-radius: 10px;
+    width: fit-content;  /* shrink-wraps the board */
+    margin: 0 auto;      /* centers horizontally */
+    align-items: center;
 }

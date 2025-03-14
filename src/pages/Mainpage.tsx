@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import "../styles/Mainpage.css";
 
 const Mainpage: React.FC = () => {
@@ -28,15 +27,15 @@ const Mainpage: React.FC = () => {
     }, []);
 
     return (
-        <div className="mainpage">
+        <div className={`mainpage fade-in ${isVisible ? "show" : ""}`}>
             <header className="header-section">
                 <h1 className="title">Alpha Zero on Connect 4</h1>
-                <Link to="/play" className="play-link">Play Connect 4</Link>
+
             </header>
 
             <section
                 ref={sectionRef}
-                className={`content-section fade-in ${isVisible ? "show" : ""}`}
+                className={`content-section`}
             >
                 <h2>What is AlphaGo and AlphaZero?</h2>
                 <ul>
