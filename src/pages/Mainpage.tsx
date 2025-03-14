@@ -65,4 +65,5 @@ const Mainpage: React.FC = () => {
     );
 };
 
+
 export default Mainpage;

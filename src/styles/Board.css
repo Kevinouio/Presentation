@@ -5,7 +5,6 @@
     background-color: #3b82f6;
     padding: 10px;
     border-radius: 10px;
-    width: fit-content;  /* shrink-wraps the board */
-    margin: 0 auto;      /* centers horizontally */
-    align-items: center;
+    position: relative;
+    z-index: 2; /* Ensures board and its "holes" remain on top */
 }

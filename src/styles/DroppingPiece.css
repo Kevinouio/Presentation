@@ -1,0 +1,15 @@
+.dropping-piece {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    z-index: 2; /* Below the board (which has z-index: 2) */
+}
+
+.dropping-piece.red {
+    background-color: red;
+}
+
+.dropping-piece.yellow {
+    background-color: yellow;
+}
