@@ -30,9 +30,8 @@ const DroppingPiece: React.FC<DroppingPieceProps> = ({
         <div
             className={`dropping-piece ${color}`}
             style={{
-                left: `${(colIndex * cellSize) + 26 }px`,
-                top: `${top}px`,
-
+                left: `${(colIndex * (cellSize + 5)) + 10}px`,
+                top: `${top + 120}px`,
                 transition: "top 0.5s ease-out",
             }}
             onTransitionEnd={onDropComplete}

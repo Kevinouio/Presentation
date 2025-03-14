@@ -19,14 +19,12 @@ const Connect4: React.FC = () => {
     );
     const [currentPlayer, setCurrentPlayer] = useState("red");
     const [winner, setWinner] = useState<string | null>(null);
-    const [droppingPiece, setDroppingPiece] = useState<DroppingPieceInfo | null>(
-        null
-    );
+    const [droppingPiece, setDroppingPiece] = useState<DroppingPieceInfo | null>(null);
+    const [hoveredColumn, setHoveredColumn] = useState<number | null>(null);
 
     const handleColumnClick = (colIndex: number) => {
-        if (winner || droppingPiece) return; // prevent new drop while animating
-        const newBoard = board.map(row => [...row]);
-        // Find the target row for this column
+        if (winner || droppingPiece) return;
+        const newBoard = board.map((row) => [...row]);
         let targetRow = -1;
         for (let row = 5; row >= 0; row--) {
             if (!newBoard[row][colIndex]) {
@@ -34,19 +32,16 @@ const Connect4: React.FC = () => {
                 break;
             }
         }
-        if (targetRow === -1) return; // column is full
+        if (targetRow === -1) return;
 
-        // Set the dropping piece info (animation will start)
         setDroppingPiece({ col: colIndex, targetRow, color: currentPlayer });
     };
 
-    // Called when the dropping animation completes
     const onDropComplete = () => {
         if (droppingPiece) {
             const { col, targetRow, color } = droppingPiece;
-            const newBoard = board.map(row => [...row]);
+            const newBoard = board.map((row) => [...row]);
             newBoard[targetRow][col] = color;
-            // Check for a win
             if (checkWinner(newBoard, targetRow, col, color)) {
                 setWinner(color);
             } else {
@@ -70,7 +65,41 @@ const Connect4: React.FC = () => {
                 {winner ? `${winner} wins!` : `Turn: ${currentPlayer}`}
             </h2>
             <div className="board-container">
+                {/* Preview row above the board */}
+                <div className="preview-row">
+                    {Array(7)
+                        .fill(null)
+                        .map((_, colIndex) => (
+                            <div
+                                key={colIndex}
+                                className="preview-cell"
+                                onMouseEnter={() => setHoveredColumn(colIndex)}
+                                onMouseLeave={() => setHoveredColumn(null)}
+                                onClick={() => handleColumnClick(colIndex)}
+                            >
+                                {hoveredColumn === colIndex && (
+                                    <div className={`preview-piece ${currentPlayer}`} />
+                                )}
+                            </div>
+                        ))}
+                </div>
+                {/* Actual game board */}
                 <Board board={board} onColumnClick={handleColumnClick} />
+                {/* Overlay on top of the board to capture hover events */}
+                <div className="board-hover-overlay">
+                    {Array(7)
+                        .fill(null)
+                        .map((_, colIndex) => (
+                            <div
+                                key={colIndex}
+                                className="hover-overlay-column"
+                                onMouseEnter={() => setHoveredColumn(colIndex)}
+                                onMouseLeave={() => setHoveredColumn(null)}
+                                onClick={() => handleColumnClick(colIndex)}
+                            />
+                        ))}
+                </div>
+                {/* Dropping piece animation */}
                 {droppingPiece && (
                     <DroppingPiece
                         colIndex={droppingPiece.col}
