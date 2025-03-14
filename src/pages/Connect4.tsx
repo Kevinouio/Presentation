@@ -39,7 +39,10 @@ const Connect4: React.FC = () => {
             <h2 className="status">
                 {winner ? `${winner} wins!` : `Turn: ${currentPlayer}`}
             </h2>
-            <Board board={board} onColumnClick={handleColumnClick} />
+            <div>
+                <Board board={board} onColumnClick={handleColumnClick} />
+
+            </div>
             <ResetButton onReset={resetGame} />
         </div>
     );
