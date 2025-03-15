@@ -19,7 +19,6 @@ const DroppingPiece: React.FC<DroppingPieceProps> = ({
     const [top, setTop] = useState(-cellSize);
 
     useEffect(() => {
-        // Trigger the drop after mount; slight delay to allow initial render.
         const timer = setTimeout(() => {
             setTop(targetRow * cellSize);
         }, 50);
