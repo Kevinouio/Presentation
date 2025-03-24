@@ -27,22 +27,54 @@ const Connect4: React.FC = () => {
     const [hoveredColumn, setHoveredColumn] = useState<number | null>(null);
     const [isModelThinking, setIsModelThinking] = useState(false);
 
-    // Determine colors: player's chosen color versus model's color.
+    // Determine colors: player's chosen color vs. model's color
     const playerColor = playerOrder === "first" ? "red" : "yellow";
     const modelColor = playerColor === "red" ? "yellow" : "red";
 
     // Start game handler
-    const handleStartGame = () => {
+    const handleStartGame = async () => {
+        // Reset any existing game state
+        resetGame();
+
         const newGameId = Math.random().toString(36).substring(2, 9);
         setGameId(newGameId);
         setGameStarted(true);
+
+        try {
+            const response = await fetch("http://127.0.0.1:5001/api/start-game", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    gameId: newGameId,
+                    playerOrder: playerOrder
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to start game");
+            }
+
+            // If player is second, immediately get model move
+            if (playerOrder === "second") {
+                setCurrentPlayer(modelColor);
+                setTimeout(() => {
+                    getModelMove();
+                }, 1000);
+            }
+        } catch (error) {
+            console.error("Error starting game:", error);
+            alert("Failed to start game. Please try again.");
+            resetGame();
+        }
     };
 
-    // Handler for column click (user move)
+
+    // Handler for column click (human or model moves)
     const handleColumnClick = (colIndex: number, isModelMove = false) => {
-        // Prevent moves if there's a winner or a piece is dropping,
-        // and if it's a user move, block it when it's the model's turn.
-        if (winner || droppingPiece || (!isModelMove && currentPlayer === modelColor)) return;
+        if (winner || droppingPiece) return;
+        // Prevent human clicks if it's the model's turn
+        if (!isModelMove && currentPlayer === modelColor) return;
+
         const newBoard = board.map((row) => [...row]);
         let targetRow = -1;
         for (let row = 5; row >= 0; row--) {
@@ -56,62 +88,88 @@ const Connect4: React.FC = () => {
         setDroppingPiece({ col: colIndex, targetRow, color: currentPlayer });
     };
 
-    // Called when the drop animation completes
-    const onDropComplete = () => {
-        if (droppingPiece) {
-            const { col, targetRow, color } = droppingPiece;
-            const newBoard = board.map((row) => [...row]);
-            newBoard[targetRow][col] = color;
-            if (checkWinner(newBoard, targetRow, col, color)) {
-                setWinner(color);
-            } else {
-                const nextPlayer = color === "red" ? "yellow" : "red";
-                setCurrentPlayer(nextPlayer);
-                // If it's the model's turn, trigger its move.
-                if (nextPlayer === modelColor) {
-                    getModelMove(newBoard, nextPlayer);
+    // Called when the piece drop animation completes
+    const onDropComplete = async () => {
+        if (!droppingPiece) return;
+
+        const { col, targetRow, color } = droppingPiece;
+        const newBoard = board.map((row) => [...row]);
+        newBoard[targetRow][col] = color;
+
+        if (checkWinner(newBoard, targetRow, col, color)) {
+            setWinner(color);
+        } else {
+            const nextPlayer = color === "red" ? "yellow" : "red";
+            setCurrentPlayer(nextPlayer);
+
+            // If human just played, send the move to the backend
+            if (color === playerColor) {
+                try {
+                    await fetch("http://127.0.0.1:5001/api/send-move", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            move: col,
+                            gameId: gameId  // Include gameId here
+                        }),
+                    });
+                } catch (error) {
+                    console.error("Error sending human move:", error);
                 }
             }
-            setBoard(newBoard);
-            setDroppingPiece(null);
+
+            // If it’s now the model’s turn, fetch the model’s move
+            if (nextPlayer === modelColor) {
+                getModelMove();
+            }
         }
+        setBoard(newBoard);
+        setDroppingPiece(null);
     };
 
-    const getModelMove = async (currentBoard: any, moveOrder: string) => {
+    const getModelMove = async () => {
         setIsModelThinking(true);
-        const payload = {
-            gameId,
-            board: currentBoard,
-            moveOrder, // should be the model's color
-        };
+        let retries = 3;
 
-        try {
-            // Artificial delay to simulate slow API response
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+        while (retries > 0) {
+            try {
+                const response = await fetch(
+                    `http://127.0.0.1:5001/api/get-model-move?gameId=${gameId}`
+                );
 
-            const response = await fetch("http://127.0.0.1:5000/api/get-move", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-            // In getModelMove, when the API returns a move:
-            const data = await response.json();
-            setIsModelThinking(false);
-// Pass 'true' for isModelMove so that the check is bypassed.
-            handleColumnClick(data.move, true);
+                if (response.status === 200) {
+                    const data = await response.json();
+                    setIsModelThinking(false);
+                    handleColumnClick(data.move, true);
+                    return;
+                }
 
-        } catch (error) {
-            console.error("Error fetching model move:", error);
-            setIsModelThinking(false);
+                if (response.status === 504) {
+                    retries--;
+                    await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5s before retry
+                    continue;
+                }
+
+                throw new Error("Failed to get model move");
+
+            } catch (error) {
+                console.error("Error fetching model move:", error);
+                if (retries <= 0) {
+                    setIsModelThinking(false);
+                    alert("Model failed to respond. Please restart the game.");
+                    resetGame();
+                }
+            }
         }
     };
 
+
+    // If the game starts and it's the model’s turn, immediately fetch a model move
     useEffect(() => {
-        console.log("useEffect triggered", { gameStarted, currentPlayer, modelColor, droppingPiece });
-        if (gameStarted && currentPlayer === modelColor && !droppingPiece) {
-            getModelMove(board, currentPlayer);
+        if (gameStarted && currentPlayer === modelColor && !droppingPiece && gameId) {
+            getModelMove();
         }
-    }, [gameStarted, currentPlayer, droppingPiece, board, modelColor]);
+    }, [gameStarted, currentPlayer, droppingPiece, board, modelColor, gameId]); // Add gameId to dependencies
 
     // Reset game state
     const resetGame = () => {
@@ -152,6 +210,14 @@ const Connect4: React.FC = () => {
         <div className="connect4-page">
             <div className="status-container">
                 <div className="status-info">
+                    <span className="status-label">Game Status:</span>
+                    <span className="status-value">
+                        {!gameStarted ? "Not Started" :
+                        winner ? "Completed" :
+                        isModelThinking ? "Model Thinking..." : "In Progress"}
+                    </span>
+                </div>
+                <div className="status-info">
                     <span className="status-label">Your Color:</span>
                     <span className={`chip ${playerColor}`}></span>
                 </div>
@@ -167,10 +233,10 @@ const Connect4: React.FC = () => {
                 )}
             </div>
             <h3 className="game-id">Game ID: {gameId}</h3>
-            {isModelThinking && (
-                <div className="thinking-message">Model is thinking...</div>
-            )}
+            {isModelThinking && <div className="thinking-message">Model is thinking...</div>}
+
             <div className="board-container">
+                {/* Preview row for hover effect */}
                 <div className="preview-row">
                     {Array(7).fill(null).map((_, colIndex) => (
                         <div
@@ -186,7 +252,11 @@ const Connect4: React.FC = () => {
                         </div>
                     ))}
                 </div>
+
+                {/* The main board */}
                 <Board board={board} onColumnClick={handleColumnClick} />
+
+                {/* Invisible overlay to handle clicks */}
                 <div className="board-hover-overlay">
                     {Array(7).fill(null).map((_, colIndex) => (
                         <div
@@ -198,6 +268,8 @@ const Connect4: React.FC = () => {
                         />
                     ))}
                 </div>
+
+                {/* Animated piece dropping */}
                 {droppingPiece && (
                     <DroppingPiece
                         colIndex={droppingPiece.col}
@@ -207,6 +279,7 @@ const Connect4: React.FC = () => {
                     />
                 )}
             </div>
+
             <ResetButton onReset={resetGame} />
         </div>
     );

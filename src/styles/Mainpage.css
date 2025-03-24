@@ -16,12 +16,20 @@ html, body {
 .header-section,
 .content-section {
     flex: 0 0 100%;  /* Force these items to take up 100% width */
+    color: black;
+    background-color: white;
+    transition-property: all;
+    transition-duration: 1s;
+    transition-timing-function: linear;
+    &:hover {
+        border-color: blue;
+    }
 }
 
 
 .header-section {
     text-align: center;
-    color: white;
+
     padding: 0;
     margin-bottom: 20px;
 
@@ -48,17 +56,19 @@ html, body {
 
 /* Full-width content sections */
 .content-section {
-    background-color: #000;
-    color: #fff;
+    background-color: white;
+    color: black;
     padding: 0;
     margin-bottom: 20px;
     border-radius: 8px;
     display: flex;
+    flex-direction: column;
+    width: 50%;
 }
-.header-section,
-.content-section {
+.header-section{
     width: 100%;
 }
+
 
 /* Fade-in animation */
 .fade-in {

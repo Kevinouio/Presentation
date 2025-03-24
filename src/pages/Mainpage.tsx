@@ -32,7 +32,7 @@ const Mainpage: React.FC = () => {
                 <h1 className="title">Alpha Zero on Connect 4</h1>
 
             </header>
-
+            <image href="./images/Screenshot 2023-08-29 at 10.53.50 PM.png"></image>
             <section
                 ref={sectionRef}
                 className={`content-section`}
@@ -53,14 +53,6 @@ const Mainpage: React.FC = () => {
                 </ul>
             </section>
 
-            <section className="content-section">
-                <h1>How is AlphaZero structured/trained?</h1>
-                <ul>
-                    <li>Deep Neural Network with 2 heads – policy and state value – based on the ResNet architecture</li>
-                    <li>Initial 3x3 Convolution Layer with 256 filters</li>
-                    <li>40 residual blocks, each composed of two 3x3 convolution layers with a skip connection, with 256 filters</li>
-                </ul>
-            </section>
         </div>
     );
 };
